@@ -1,35 +1,55 @@
 #!/usr/bin/env python
 
 from datetime import datetime
-import glob, gzip, re
+import gzip, re
 import sys, os
 from collections import defaultdict
-
-# Set the report type:  daily, monthly, yearly
-period = "monthly"
-
-#  Set the log file directory here
-# data_dir = '/home/bennet/python/logmunger/data'
-data_dir = '/usr/flux/logs'
-if os.path.isdir(data_dir):
-    os.chdir(data_dir)
-else:
-    print "No data directory"
-
-# Get the list of filenames from the log directory
-#   At some point this should be limitable to, say one month
-
-logfiles = glob.glob('./*.gz')
-# for debugging, use just one file
-# logfiles = [ './module_log-flux2-2013-10-05.gz', './module_log-flux1-2013-10-05.gz' ]
+from glob import glob
 
 # Initialize entries as a list
 entries = []
 report = defaultdict(dict)
 
-for zipped_log in logfiles:
+# Set the report type:  daily, monthly, yearly
+period = "monthly"
+
+# Set these as '' to be a wildcard, otherwise set a value for one
+# or more
+year = '2013'
+month = '10'
+day = ''
+hostnames = 'flux[12]'
+
+# Set the log file directory here
+# data_dir = '/home/bennet/python/logmunger/data'
+data_dir = '/usr/flux/logs'
+
+# We used to change to the directory, but that's bad, as we want to
+# be able to run from someplace we can write without being root.
+if os.path.isdir(data_dir):
+    pass
+else:
+    print "No data directory"
+
+# Assign glob wildcards if these are empty
+if year == '':
+    year = '[0-9]*'
+
+if month == '':
+    month = '[0-9]*'
+
+if day == '':
+    day = '[0-9]*'
+
+# Create the filename glob string
+logfiles = data_dir + '-'.join(['/module_log', hostnames, year, month, day]) + '.gz'
+
+# Can use a constant for debugging...
+# logfiles = logpath + '/module_log-flux2-2013-10-05.gz'
+
+for zipped_log in glob(logfiles):
     # Extract the year from the filename
-    year = str(re.match('./module_log-flux[12]-(?P<year>[\d]{4})-\d{2}-\d{2}.gz',
+    year = str(re.search('/module_log-flux[12]-(?P<year>[\d]{4})-\d{2}-\d{2}.gz',
                      zipped_log).group('year'))
     # print "Working on %s" % zipped_log
     # Open the log file
