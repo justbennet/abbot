@@ -10,6 +10,10 @@ from glob import glob
 entries = []
 report = defaultdict(dict)
 
+# Set the location of the folder for the processed data
+# report_dir = '/home/bennet/python/abbot'
+report_dir = '/Users/bennet/python/abbot'
+
 # Set the report type:  daily, monthly, yearly
 period = "monthly"
 
@@ -20,9 +24,15 @@ month = '10'
 day = ''
 hostnames = 'flux[12]'
 
+# Set raw data and summary log file names based on report type and period
+if period == 'monthly':
+    raw_file = '/Users/bennet/abbot/' + '-'.join((year, month))
+
+print "The raw data file will be:  " + raw_file
+
 # Set the log file directory here
-# data_dir = '/home/bennet/python/logmunger/data'
-data_dir = '/usr/flux/logs'
+data_dir = '/Users/bennet/python/abbot/logs'
+# data_dir = '/usr/flux/logs'
 
 # We used to change to the directory, but that's bad, as we want to
 # be able to run from someplace we can write without being root.
@@ -95,8 +105,16 @@ for zipped_log in glob(logfiles):
                 report[str_date][module] += 1
         # End processing the line from the log file
     f.close()
-    
+
+use_list = []
+
 # Print the summary report based on the time period.
 for d in report:
     for m in report[d]:
-        print "%s module %-35s usage was %d" % (d, m, report[d][m])
+        # print "%s module %-35s usage was %d" % (d, m, report[d][m])
+        # print "%-35s %d" % (m, report[d][m])
+        use_list.append((m, report[d][m]))
+
+use_list.sort()
+for e in use_list:
+    print "%-35s %d" % e
