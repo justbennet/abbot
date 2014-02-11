@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+import sys, os
 from datetime import datetime
 import gzip, re
-import sys, os
 from collections import defaultdict
 from glob import glob
+
+# import the functions for the module reporter
+sys.path.append('/home/bennet/python/abbot')
+from functions import *
 
 # Initialize entries as a list
 entries = []
@@ -14,22 +18,22 @@ report = defaultdict(dict)
 period = "monthly"
 
 # Set these as '' to be a wildcard, otherwise set a value for one
-# or more
+# or more of the period
 year = '2013'
 month = '10'
 day = ''
 hostnames = 'flux[12]'
 
 # Set the log file directory here
-# data_dir = '/home/bennet/python/logmunger/data'
-data_dir = '/usr/flux/logs'
+dataDir = '/usr/flux/logs'
 
 # We used to change to the directory, but that's bad, as we want to
 # be able to run from someplace we can write without being root.
-if os.path.isdir(data_dir):
+if os.path.isdir(dataDir):
     pass
 else:
     print "No data directory"
+    sys.exit(9)
 
 # Assign glob wildcards if these are empty
 if year == '':
@@ -42,36 +46,16 @@ if day == '':
     day = '[0-9]*'
 
 # Create the filename glob string
-logfiles = data_dir + '-'.join(['/module_log', hostnames, year, month, day]) + '.gz'
+logfiles = dataDir + '-'.join(['/module_log', hostnames, year, month, day]) + '.gz'
 
-# Can use a constant for debugging...
+# Use a constant for debugging...
 # logfiles = logpath + '/module_log-flux2-2013-10-05.gz'
 
-for zipped_log in glob(logfiles):
+for zippedLog in glob(logfiles):
     # Extract the year from the filename
-    year = str(re.search('/module_log-flux[12]-(?P<year>[\d]{4})-\d{2}-\d{2}.gz',
-                     zipped_log).group('year'))
-    # print "Working on %s" % zipped_log
-    # Open the log file
-    f = gzip.open(zipped_log, 'r')
-    N = 0
-    for line in f:
-        # if N == 0: print line
-        N += 1
-        # Some lines have the trailing 'flux' field; use the slice to insure
-        # only seven entries are used
-        [ month, day, time, host, user, module, version ] = line.split()[0:7]
-        # Strip the trailing colon
-        user = user.rstrip(':')
-        # Construct a datetime object from the components
-        date = datetime.strptime(month + ' ' + day + ' ' + year + ' ' + time,
-                                 '%b %d %Y %H:%M:%S')
-        module = module + '/' + version
-        # Add user and module to the entry
-        entry = [ date, ]
-        entry = entry + [ user, ]
-        entry = entry + [ module, ]
-        entries.append(entry)
+    year = getLogYear(zippedLog)
+    log = gzip.open(zippedLog, 'r')
+    logEntries = readZippedLog(zippedLog)
 
         # Change the definition for the date key based on report period
         # defined at the top.  Eventually, this might be a command line
