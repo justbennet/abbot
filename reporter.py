@@ -51,35 +51,37 @@ logfiles = dataDir + '-'.join(['/module_log', hostnames, year, month, day]) + '.
 # Use a constant for debugging...
 # logfiles = logpath + '/module_log-flux2-2013-10-05.gz'
 
+# Populate logEntries with the requested entries, which are in format
+#  [ date, user, module, version ]
+logEntries = []
 for zippedLog in glob(logfiles):
     # Extract the year from the filename
-    year = getLogYear(zippedLog)
-    log = gzip.open(zippedLog, 'r')
-    logEntries = readZippedLog(zippedLog)
+    logEntries += readZippedLog(zippedLog)
 
-        # Change the definition for the date key based on report period
-        # defined at the top.  Eventually, this might be a command line
-        # option.        
-        if period == "daily":
-            str_date = date.strftime('%Y-%m-%d')
-        elif period == "monthly":
-            str_date = date.strftime('%Y-%m')
-        elif period == "yearly":
-            str_date = date.strftime('%Y')
-
-        if str_date not in report:
-            # No date yet?  Initialize it with the current module
-            report[str_date] = { module : 1 }
+# Process the requested entries
+for logEntry in logEntries:
+    # Change the definition for the date key based on report period
+    # defined at the top.  Eventually, this might be a command line
+    # option.
+    if period == "daily":
+        str_date = logEntry[0].strftime('%Y-%m-%d')
+    elif period == "monthly":
+        str_date = logEntry[0].strftime('%Y-%m')
+    elif period == "yearly":
+        str_date = logEntry[0].strftime('%Y')
+    date, user, module, version = logEntry
+    firstKey  = module
+    secondKey = user
+    if firstKey not in report:
+        # No date yet?  Initialize it with the current module
+        report[firstKey] = { secondKey : 1 }
+    else:
+        # Date is there, so look for the module key: create and set to 1
+        # or add 1 to it for this occurrence.
+        if secondKey not in report[firstKey]:
+            report[firstKey][secondKey] = 1
         else:
-            # Date is there, so look for the module key: create and set to 1
-            # or add 1 to it for this occurrence.
-            if module not in report[str_date]:
-                report[str_date][module] = 1
-            else:
-                report[str_date][module] += 1
-        # End processing the line from the log file
-    f.close()
-    
+            report[firstKey][secondKey] += 1
 # Print the summary report based on the time period.
 for d in report:
     for m in report[d]:

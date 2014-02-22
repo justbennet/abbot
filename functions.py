@@ -1,4 +1,5 @@
 import re, time, gzip
+from datetime import datetime
 
 def getLogYear(logFileName):
     '''Extract the year from the filename'''
@@ -11,6 +12,7 @@ def readZippedLog(zippedLog):
        user, module, and version'''
     year = getLogYear(zippedLog)
     log = gzip.open(zippedLog, 'r')
+    entries = []
     for line in log:
         # Some lines have the trailing 'flux' field; use the slice to insure
         # only seven entries are used
@@ -18,10 +20,10 @@ def readZippedLog(zippedLog):
         # Strip the trailing colon from the user name
         user = user.rstrip(':')
         # Construct a datetime object from the components
-        date = datetime.strptime(month + ' ' + day + ' ' + year + ' ' + time,
+        date = datetime.strptime(month + ' ' + day + ' ' + str(year) + ' ' + time,
                                  '%b %d %Y %H:%M:%S')
         entries.append( [date, user, module, version] )
-    f.close()
+    log.close()
     return entries
 
 def reportMonth(month, year):
